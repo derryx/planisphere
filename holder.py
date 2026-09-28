@@ -208,7 +208,7 @@ class Holder(BaseComponent):
                 Label text
             """
             if time_format == "24h":
-                return "{:02d}{}".format(hour, "h" if language in ("fr", "de") else "")
+                return "{:02d}{}".format(hour, "h" if language == "fr" else "")
             return "{:d}{}".format((hour - 1) % 12 + 1, "AM" if hour < 12 else "PM")
 
         # Write the hours
