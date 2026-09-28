@@ -193,12 +193,30 @@ class Holder(BaseComponent):
             context.arc(centre_x=0, centre_y=-h, radius=(r_3 + r_4) / 2, arc_from=i - pi / 2, arc_to=i + dash - pi / 2)
             context.stroke(line_width=(r_3 - r_4) / line_width_base)
 
+        # Decide whether to label the clock face in 12-hour (AM/PM) or 24-hour format
+        time_format: str = settings.get('time_format', 'auto')
+        if time_format == "auto":
+            time_format = "24h" if language == "fr" else "12h"
+
+        def format_hour(hour: int) -> str:
+            """
+            Format an hour of the day (0-23) as a clock-face label.
+
+            :param hour:
+                Hour of the day, 0-23
+            :return:
+                Label text
+            """
+            if time_format == "24h":
+                return "{:02d}{}".format(hour, "h" if language in ("fr", "de") else "")
+            return "{:d}{}".format((hour - 1) % 12 + 1, "AM" if hour < 12 else "PM")
+
         # Write the hours
         for hr in arange(-7, 7.1, 1):
-            txt: str = "{:.0f}{}".format(hr if (hr > 0) else hr + 12,
-                                         "AM" if (hr > 0) else "PM")
-            if language == "fr":
-                txt = "{:02d}h00".format(int(hr if (hr > 0) else hr + 24))
+            txt: str = format_hour(int(hr) % 24)
+            if settings.get('dst', False):
+                # Daylight saving time is one hour ahead of standard time
+                txt = "{} ({})".format(txt, format_hour((int(hr) + 1) % 24))
             if hr == 0:
                 txt = ""
             t: float = unit_rev / 24 * hr * (-1 if not is_southern else 1)
@@ -282,11 +300,17 @@ class Holder(BaseComponent):
                 h_align=0, v_align=0, gap=0, rotation=0)
             context.set_font_style(bold=False)
 
+        # Explain how to convert clock time into the local mean time shown on the clock face
+        time_note: str = "{} {}".format(text[language]['time_note'],
+                                        text[language]['time_note_dst' if settings.get('dst', False)
+                                                       else 'time_note_standard'])
+
         # Write explanatory text on the back of the planisphere
-        context.set_font_size(1.1)
+        # (slightly smaller and lower than the other text, to leave room for the time note)
+        context.set_font_size(0.95)
         context.text_wrapped(
-            text=text[language]['instructions_4'],
-            x=0, y=5.5 * unit_cm, width=12 * unit_cm, justify=-1,
+            text=tuple(text[language]['instructions_4']) + ("", time_note),
+            x=0, y=6.5 * unit_cm, width=12 * unit_cm, justify=-1,
             h_align=0, v_align=1, rotation=0.5 * unit_rev)
 
         # Display web link and copyright text
@@ -310,7 +334,9 @@ if __name__ == "__main__":
     # Render the holder for the planisphere
     Holder(settings={
         'latitude': arguments['latitude'],
-        'language': 'en'
+        'language': 'en',
+        'time_format': arguments['time_format'],
+        'dst': arguments['dst']
     }).render_to_file(
         filename=arguments['filename'],
         img_format=arguments['img_format']
