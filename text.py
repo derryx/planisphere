@@ -57,6 +57,11 @@ text: Dict[str, dict] = {
                 [30, "NOVEMBER"],
                 [31, "DECEMBER"]
             ],
+            "deep_sky_names": {
+                "M31": "Andromeda Galaxy",
+                "M42": "Orion Nebula",
+                "M45": "Pleiades"
+            },
             "constellation_translations": {
             }
         },
@@ -97,6 +102,11 @@ text: Dict[str, dict] = {
                 [30, "NOVEMBER"],
                 [31, "DEZEMBER"],
             ],
+            "deep_sky_names": {
+                "M31": "Andromedagalaxie",
+                "M42": "Orionnebel",
+                "M45": "Plejaden"
+            },
             "constellation_translations": {
                 "Andromeda": "Andromeda",
                 "Antlia": "Luftpumpe",
@@ -224,6 +234,11 @@ text: Dict[str, dict] = {
                 [30, "NOVEMBRE"],
                 [31, "DÉCEMBRE"]
             ],
+            "deep_sky_names": {
+                "M31": "Galaxie d'Andromède",
+                "M42": "Nébuleuse d'Orion",
+                "M45": "Pléiades"
+            },
             "constellation_translations": {
                 "Andromeda": "Andromède",
                 "Antlia": "Antlia",
@@ -351,6 +366,11 @@ text: Dict[str, dict] = {
                 [30, "LISTOPAD"],
                 [31, "GRUDZIEŃ"]
             ],
+            "deep_sky_names": {
+                "M31": "Galaktyka Andromedy",
+                "M42": "Mgławica Oriona",
+                "M45": "Plejady"
+            },
             "constellation_translations": {
                 "Andromeda": "Andromeda",
                 "Antlia": "Pompa",
@@ -478,6 +498,11 @@ text: Dict[str, dict] = {
                 [30, "NOVEMBRO"],
                 [31, "DEZEMBRO"]
             ],
+            "deep_sky_names": {
+                "M31": "Galáxia de Andrômeda",
+                "M42": "Nebulosa de Órion",
+                "M45": "Plêiades"
+            },
             "constellation_translations": {
                 "Andromeda": "Andrômeda",
                 "Antlia": "Bomba_de_Ar",
@@ -605,6 +630,11 @@ text: Dict[str, dict] = {
                 [30, "ЛИСТОПАД"],
                 [31, "ГРУДЕНЬ"]
             ],
+            "deep_sky_names": {
+                "M31": "Галактика Андромеди",
+                "M42": "Туманність Оріона",
+                "M45": "Плеяди"
+            },
             "constellation_translations": {
                 "Andromeda": "Андромеда",
                 "Antlia": "Насос",
@@ -733,6 +763,11 @@ text: Dict[str, dict] = {
                 [30, "NOVIEMBRE"],
                 [31, "DICIEMBRE"]
             ],
+            "deep_sky_names": {
+                "M31": "Galaxia de Andrómeda",
+                "M42": "Nebulosa de Orión",
+                "M45": "Pléyades"
+            },
             "constellation_translations": {
 
             }

@@ -47,6 +47,8 @@ def fetch_command_line_arguments(default_filename: str = '') -> Dict[str, Union[
                              "'auto' picks a format based on the language.")
     parser.add_argument('--dst', dest='dst', action='store_true',
                         help="Additionally print daylight saving time (+1 hour) in brackets after each hour.")
+    parser.add_argument('--deep-sky', dest='deep_sky', action='store_true',
+                        help="Mark the brightest deep-sky objects (galaxies, star clusters, nebulae) on the star wheel.")
     args = parser.parse_args()
 
     return {
@@ -55,5 +57,6 @@ def fetch_command_line_arguments(default_filename: str = '') -> Dict[str, Union[
         "filename": args.filename,
         "theme": args.theme,
         "time_format": args.time_format,
-        "dst": args.dst
+        "dst": args.dst,
+        "deep_sky": args.deep_sky
     }

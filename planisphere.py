@@ -45,6 +45,7 @@ arguments: Dict[str, Union[int, str]] = fetch_command_line_arguments()
 theme: str = arguments['theme']
 time_format: str = arguments['time_format']
 dst: bool = arguments['dst']
+deep_sky: bool = arguments['deep_sky']
 
 # Render planisphere in all available languages
 language: str
@@ -76,7 +77,8 @@ for language in text.text:
             'latitude': latitude,
             'theme': theme,
             'time_format': time_format,
-            'dst': dst
+            'dst': dst,
+            'deep_sky': deep_sky
         }
 
         # Render the various parts of the planisphere
