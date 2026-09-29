@@ -48,13 +48,11 @@ dst: bool = arguments['dst']
 
 # Render planisphere in all available languages
 language: str
-# for language in text.text:
-for language in ['de']:
+for language in text.text:
 
     # Render climates for latitudes at 5-degree spacings from 10 deg -- 85 deg, plus 52N
     latitude: float
- #   for latitude in list(range(-80, 90, 5)) + [52]:
-    for latitude in [50]:
+    for latitude in list(range(-80, 90, 5)) + [52]:
 
         # Do not make equatorial planispheres, as they don't really work
         if -10 < latitude < 10:
