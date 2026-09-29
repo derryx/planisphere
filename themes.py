@@ -29,7 +29,7 @@ themes: Dict[str, Dict[str, Tuple[float, float, float, float]]] = {
             "stick": (0.25, 0.25, 0.25, 1),
             "star": (0, 0, 0, 1),
             "constellation": (0, 0, 0, 1),
-            "deep_sky": (0.65, 0.1, 0.1, 1)
+            "deep_sky": (0.1, 0.25, 0.6, 1)
         },
     "dark":
         {
