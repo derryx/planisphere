@@ -36,6 +36,7 @@ text: Dict[str, dict] = {
             "time_note_dst": "During daylight saving time, use the times in brackets.",
             "more_info": "For more information, see https://in-the-sky.org/planisphere       \u00A9 Dominic Ford 2014\u20132024.",
             "glue_here": "GLUE HERE",
+            "time_label": "TIME",
             "cut_out_instructions": (
                 "Cut out this shaded area with scissors.",
                 "",
@@ -74,6 +75,7 @@ text: Dict[str, dict] = {
             "time_note_dst": "Während der Sommerzeit (MESZ) gelten die Uhrzeiten in Klammern.",
             "more_info": "Für weitere Informationen, sehen Sie https://in-the-sky.org/planisphere       \u00A9 Dominic Ford 2014\u20132024.",
             "glue_here": "HIER KLEBEN",
+            "time_label": "UHRZEIT",
             "cut_out_instructions": (
                 "Schneiden Sie diese graue Fläche mit der Schere aus.",
                 "",
@@ -201,6 +203,7 @@ text: Dict[str, dict] = {
             "time_note_dst": "Pendant l'heure d'été, utilisez les heures entre parenthèses.",
             "more_info": "Pour plus d'informations, voir https://in-the-sky.org/planisphere       \u00A9 Dominic Ford 2014\u20132024.",
             "glue_here": "COLLER ICI",
+            "time_label": "HEURE",
             "cut_out_instructions": (
                 r"Découpez cette zone grisée.",
                 "",
@@ -327,6 +330,7 @@ text: Dict[str, dict] = {
             "time_note_dst": "W czasie letnim korzystaj z godzin podanych w nawiasach.",
             "more_info": "Więciej informacji znajdziesz na stronie https://in-the-sky.org/planisphere       \u00A9 Dominic Ford 2014\u20132024.",
             "glue_here": "TUTAJ PRZYKLEIĆ",
+            "time_label": "GODZINA",
             "cut_out_instructions": (
                 "Wytnij zacieniony obszar nożyczkami.",
                 "",
@@ -453,6 +457,7 @@ text: Dict[str, dict] = {
             "time_note_dst": "Durante o horário de verão, use os horários entre parênteses.",
             "more_info": "Para mais informações, veja https://in-the-sky.org/planisphere       \u00A9 Dominic Ford 2014\u20132024.",
             "glue_here": "COLA AQUI",
+            "time_label": "HORA",
             "cut_out_instructions": (
                 "Recorte esta área sombreada com uma tesoura.",
                 "",
@@ -579,6 +584,7 @@ text: Dict[str, dict] = {
             "time_note_dst": "Під час літнього часу користуйтеся значеннями в дужках.",
             "more_info": "Більше інформації на сайті https://in-the-sky.org/planisphere       \u00A9 Dominic Ford 2014\u20132024.",
             "glue_here": "ПРИКЛЕЇТИ ТУТ",
+            "time_label": "ЧАС",
             "cut_out_instructions": (
                 "Виріжте цю затінену ділянку ножицями.",
                 "",
@@ -706,6 +712,7 @@ text: Dict[str, dict] = {
             "time_note_dst": "Durante el horario de verano, usa las horas entre paréntesis.",
             "more_info": "Para más información: https://in-the-sky.org/planisphere       \u00A9 Dominic Ford 2014\u20132024.",
             "glue_here": "PEGAR AQUÍ",
+            "time_label": "HORA",
             "cut_out_instructions": (
                 "Corta el area sombreada con tijeras.",
                 "",

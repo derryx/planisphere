@@ -228,6 +228,15 @@ class Holder(BaseComponent):
             context.stroke(line_width=1)
             context.text(text=txt, x=r_6 * sin(t), y=-h - r_6 * cos(t), h_align=0, v_align=0, gap=0, rotation=t)
 
+        # Label the clock face just beyond both ends of the scale. We anchor the text at the end nearest the scale:
+        # its start on the right-hand side, and its end on the left-hand side.
+        time_label: str = text[language].get('time_label', '')
+        if time_label:
+            for hr in (-7.55, 7.55):
+                t = unit_rev / 24 * hr * (-1 if not is_southern else 1)
+                context.text(text=time_label, x=r_6 * sin(t), y=-h - r_6 * cos(t),
+                             h_align=-1 if t > 0 else 1, v_align=0, gap=0, rotation=t)
+
         # Back edge
         b: float = unit_cm
         t1: float = atan2(h - a, r_1)
@@ -243,12 +252,18 @@ class Holder(BaseComponent):
 
         # For latitudes not too close to the pole, we have enough space to fit instructions onto the planisphere
         if latitude < 56:
-            # Big bold title
+            # Big bold title, shrunk if necessary so that it doesn't collide with the labels at the ends of the
+            # clock face
             context.set_font_size(3.0)
-            txt: str = text[language]['title']
+            txt: str = "{} {:.0f}\u00B0{}".format(text[language]['title'], float(latitude),
+                                                   "N" if not is_southern else "S")
             context.set_font_style(bold=True)
+            title_max_width: float = 10 * unit_cm
+            title_width: float = context.measure_text(txt)['width']
+            if title_width > title_max_width:
+                context.set_font_size(3.0 * title_max_width / title_width)
             context.text(
-                text="{} {:.0f}\u00B0{}".format(txt, float(latitude), "N" if not is_southern else "S"),
+                text=txt,
                 x=0, y=-4.8 * unit_cm,
                 h_align=0, v_align=0, gap=0, rotation=0)
             context.set_font_style(bold=False)
