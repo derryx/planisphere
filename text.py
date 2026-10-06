@@ -240,7 +240,7 @@ text: Dict[str, dict] = {
                 "M31": "Galaxie d'Andromède",
                 "M42": "Nébuleuse d'Orion",
                 "M45": "Pléiades",
-                "M27": "Nébuleuse de l'Haltère"
+                "M27": "Nébuleuse Dumbbell"
             },
             "constellation_translations": {
                 "Andromeda": "Andromède",
