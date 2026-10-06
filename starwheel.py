@@ -180,7 +180,7 @@ class StarWheel(BaseComponent):
                 context.begin_path()
                 context.move_to(x=p1[0], y=p1[1])
                 context.line_to(x=p2[0], y=p2[1])
-                context.stroke(color=theme['stick'], line_width=1, dotted=True)
+                context.stroke(color=theme['stick'], line_width=1, dotted=False)
 
         # Draw the ecliptic, the path of the Sun (and, approximately, the planets) across the sky
         obliquity: float = 23.44 * unit_deg
