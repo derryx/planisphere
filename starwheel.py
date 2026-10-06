@@ -306,6 +306,17 @@ class StarWheel(BaseComponent):
                             context.move_to(x=p[0] - r_major * cos(angle), y=p[1] - r_major * sin(angle))
                             context.line_to(x=p[0] + r_major * cos(angle), y=p[1] + r_major * sin(angle))
                         context.stroke(color=theme['deep_sky'], line_width=1, dotted=False)
+                    elif obj_type == "PN":
+                        # Planetary nebulae are small circles with four spokes, which fit within the same radius as
+                        # the other symbols
+                        r_disc: float = 0.6 * r_major
+                        context.circle(centre_x=p[0], centre_y=p[1], radius=r_disc)
+                        for angle in arange(0, 2 * pi, pi / 2):
+                            context.move_to(x=p[0] + r_disc * cos(rotation + angle),
+                                            y=p[1] + r_disc * sin(rotation + angle))
+                            context.line_to(x=p[0] + r_major * cos(rotation + angle),
+                                            y=p[1] + r_major * sin(rotation + angle))
+                        context.stroke(color=theme['deep_sky'], line_width=1, dotted=False)
                     else:
                         # Nebulae are squares
                         for i, angle in enumerate(arange(pi / 4, 2 * pi, pi / 2)):
