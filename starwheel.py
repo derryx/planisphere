@@ -23,7 +23,7 @@ Render the star wheel for the planisphere.
 
 import re
 
-from math import pi, sin, cos, atan2, hypot, sqrt
+from math import pi, sin, cos, asin, atan2, hypot, sqrt
 from numpy import arange
 from typing import Dict, List, Tuple
 
@@ -180,7 +180,39 @@ class StarWheel(BaseComponent):
                 context.begin_path()
                 context.move_to(x=p1[0], y=p1[1])
                 context.line_to(x=p2[0], y=p2[1])
-                context.stroke(color=theme['stick'], line_width=1, dotted=True)
+                context.stroke(color=theme['stick'], line_width=1, dotted=False)
+
+        # Draw the ecliptic, the path of the Sun (and, approximately, the planets) across the sky
+        obliquity: float = 23.44 * unit_deg
+        context.begin_path()
+        pen_down: bool = False
+        ecliptic_longitude: float
+        for ecliptic_longitude in arange(0, 360.5, 1):
+            lng: float = ecliptic_longitude * unit_deg
+
+            # Convert ecliptic longitude into RA and Dec
+            ra: float = atan2(sin(lng) * cos(obliquity), cos(lng)) / unit_deg
+            dec: float = asin(sin(obliquity) * sin(lng)) / unit_deg
+
+            # If we're making a southern hemisphere planisphere, we flip the sky upside down
+            if is_southern:
+                ra *= -1
+                dec *= -1
+
+            # Lift the pen wherever the ecliptic passes beyond the edge of the star chart
+            r: float = radius(dec=dec, latitude=latitude)
+            if r > r_2:
+                pen_down = False
+                continue
+
+            x: float = -r * cos(ra * unit_deg)
+            y: float = -r * sin(ra * unit_deg)
+            if pen_down:
+                context.line_to(x=x, y=y)
+            else:
+                context.move_to(x=x, y=y)
+                pen_down = True
+        context.stroke(color=theme['ecliptic'], line_width=1, dotted=True)
 
         # Draw stars from Yale Bright Star Catalogue
         for star_descriptor in fetch_bright_star_list()['stars'].values():
@@ -273,6 +305,17 @@ class StarWheel(BaseComponent):
                         for angle in (rotation, rotation + pi / 2):
                             context.move_to(x=p[0] - r_major * cos(angle), y=p[1] - r_major * sin(angle))
                             context.line_to(x=p[0] + r_major * cos(angle), y=p[1] + r_major * sin(angle))
+                        context.stroke(color=theme['deep_sky'], line_width=1, dotted=False)
+                    elif obj_type == "PN":
+                        # Planetary nebulae are small circles with four spokes, which fit within the same radius as
+                        # the other symbols
+                        r_disc: float = 0.6 * r_major
+                        context.circle(centre_x=p[0], centre_y=p[1], radius=r_disc)
+                        for angle in arange(0, 2 * pi, pi / 2):
+                            context.move_to(x=p[0] + r_disc * cos(rotation + angle),
+                                            y=p[1] + r_disc * sin(rotation + angle))
+                            context.line_to(x=p[0] + r_major * cos(rotation + angle),
+                                            y=p[1] + r_major * sin(rotation + angle))
                         context.stroke(color=theme['deep_sky'], line_width=1, dotted=False)
                     else:
                         # Nebulae are squares

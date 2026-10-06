@@ -60,7 +60,8 @@ text: Dict[str, dict] = {
             "deep_sky_names": {
                 "M31": "Andromeda Galaxy",
                 "M42": "Orion Nebula",
-                "M45": "Pleiades"
+                "M45": "Pleiades",
+                "M27": "Dumbbell Nebula"
             },
             "constellation_translations": {
             }
@@ -105,7 +106,8 @@ text: Dict[str, dict] = {
             "deep_sky_names": {
                 "M31": "Andromedagalaxie",
                 "M42": "Orionnebel",
-                "M45": "Plejaden"
+                "M45": "Plejaden",
+                "M27": "Hantelnebel"
             },
             "constellation_translations": {
                 "Andromeda": "Andromeda",
@@ -237,7 +239,8 @@ text: Dict[str, dict] = {
             "deep_sky_names": {
                 "M31": "Galaxie d'Andromède",
                 "M42": "Nébuleuse d'Orion",
-                "M45": "Pléiades"
+                "M45": "Pléiades",
+                "M27": "Nébuleuse Dumbbell"
             },
             "constellation_translations": {
                 "Andromeda": "Andromède",
@@ -369,7 +372,8 @@ text: Dict[str, dict] = {
             "deep_sky_names": {
                 "M31": "Galaktyka Andromedy",
                 "M42": "Mgławica Oriona",
-                "M45": "Plejady"
+                "M45": "Plejady",
+                "M27": "Mgławica Hantle"
             },
             "constellation_translations": {
                 "Andromeda": "Andromeda",
@@ -501,7 +505,8 @@ text: Dict[str, dict] = {
             "deep_sky_names": {
                 "M31": "Galáxia de Andrômeda",
                 "M42": "Nebulosa de Órion",
-                "M45": "Plêiades"
+                "M45": "Plêiades",
+                "M27": "Nebulosa do Haltere"
             },
             "constellation_translations": {
                 "Andromeda": "Andrômeda",
@@ -633,7 +638,8 @@ text: Dict[str, dict] = {
             "deep_sky_names": {
                 "M31": "Галактика Андромеди",
                 "M42": "Туманність Оріона",
-                "M45": "Плеяди"
+                "M45": "Плеяди",
+                "M27": "Туманність Гантель"
             },
             "constellation_translations": {
                 "Andromeda": "Андромеда",
@@ -766,7 +772,8 @@ text: Dict[str, dict] = {
             "deep_sky_names": {
                 "M31": "Galaxia de Andrómeda",
                 "M42": "Nebulosa de Orión",
-                "M45": "Pléyades"
+                "M45": "Pléyades",
+                "M27": "Nebulosa Dumbbell"
             },
             "constellation_translations": {
 

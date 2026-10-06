@@ -242,7 +242,19 @@ class GraphicsContext:
             self.set_color(color=color)
         if dotted is not None:
             self.set_line_style(dotted=dotted)
-        self.context.stroke_preserve()
+
+        if self.line_dotted:
+            # Cairo (>= 1.18) discards dash patterns shorter than 1/256 of a user-space unit. Our user-space unit is
+            # the metre, so stroke dotted lines in a frame whose unit is a millimetre instead.
+            line_width: float = self.context.get_line_width()
+            self.context.save()
+            self.context.scale(sx=unit_mm, sy=unit_mm)
+            self.context.set_line_width(width=line_width / unit_mm)
+            self.context.set_dash(dashes=[1.0])
+            self.context.stroke_preserve()
+            self.context.restore()
+        else:
+            self.context.stroke_preserve()
 
     def fill(self, color: Optional[Sequence[float]] = None) -> None:
         """
@@ -349,11 +361,6 @@ class GraphicsContext:
         """
         if dotted is not None:
             self.line_dotted = dotted
-
-        if self.line_dotted:
-            self.context.set_dash([1.0 * unit_mm])
-        else:
-            self.context.set_dash([])
 
     def set_font_size(self, font_size: float) -> None:
         """
