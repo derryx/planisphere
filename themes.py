@@ -29,7 +29,8 @@ themes: Dict[str, Dict[str, Tuple[float, float, float, float]]] = {
             "stick": (0.25, 0.25, 0.25, 1),
             "star": (0, 0, 0, 1),
             "constellation": (0, 0, 0, 1),
-            "deep_sky": (0.1, 0.25, 0.6, 1)
+            "deep_sky": (0.1, 0.25, 0.6, 1),
+            "ecliptic": (0.1, 0.55, 0.1, 1)
         },
     "dark":
         {
@@ -41,6 +42,7 @@ themes: Dict[str, Dict[str, Tuple[float, float, float, float]]] = {
             "stick": (0.28, 0.35, 0.55, 1),
             "star": (1, 1, 1, 1),
             "constellation": (0.6, 0.5, 0.65, 1),
-            "deep_sky": (1, 0.65, 0.45, 1)
+            "deep_sky": (1, 0.65, 0.45, 1),
+            "ecliptic": (0.4, 0.8, 0.4, 1)
         }
 }
