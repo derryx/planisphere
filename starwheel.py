@@ -117,6 +117,48 @@ class StarWheel(BaseComponent):
         # Combine these two paths to make a clipping path for drawing the star wheel
         context.clip()
 
+        # Shade the band of the Milky Way. Each ring of its outline is added to a single path, so that the dark
+        # regions within the band are left unshaded by the even-odd fill rule.
+        context.begin_path()
+        with open("raw_data/milky_way_outline.dat", "rt") as f_in:
+            pen_down: bool = False
+            for line in f_in:
+                line: str = line.strip()
+
+                # Ignore blank lines and comment lines
+                if (len(line) == 0) or (line[0] == '#'):
+                    continue
+
+                # Start a new ring
+                if line == "ring":
+                    if pen_down:
+                        context.close_path()
+                    pen_down = False
+                    continue
+
+                ra_str, dec_str = line.split()
+                ra: float = float(ra_str)
+                dec: float = float(dec_str)
+
+                # If we're making a southern hemisphere planisphere, we flip the sky upside down
+                if is_southern:
+                    ra *= -1
+                    dec *= -1
+
+                # Pull points beyond the edge of the star chart back onto its edge, rather than discarding them, so
+                # that each ring stays closed and the shading does not spill over onto the date scale
+                r: float = min(radius(dec=dec, latitude=latitude), r_2)
+                x: float = -r * cos(ra * unit_deg)
+                y: float = -r * sin(ra * unit_deg)
+                if pen_down:
+                    context.line_to(x=x, y=y)
+                else:
+                    context.move_to(x=x, y=y)
+                    pen_down = True
+            if pen_down:
+                context.close_path()
+        context.fill(color=theme['milky_way'])
+
         # Draw lines of constant declination at 15 degree intervals.
         dec: float
         for dec in arange(-80, 85, 15):
