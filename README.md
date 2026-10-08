@@ -20,3 +20,7 @@ Planispheres do not work well when used close to the equator. The scripts in thi
 
 This code was developed by Dominic Ford <https://dcford.org.uk>. It is distributed under the Gnu General Public License V3.
 
+## Credits
+
+The outline of the Milky Way is taken from the Milky Way Outline Catalog by Jose R. Vieira <http://www.skymap.com/milkyway_cat.htm>, as converted into GeoJSON by Olaf Frohn for d3-celestial <https://github.com/ofrohn/d3-celestial>. The d3-celestial data are Copyright (c) 2015, Olaf Frohn, and are distributed under the BSD 3-clause licence, which is reproduced in full in `raw_data/milky_way_outline.dat`.
+
