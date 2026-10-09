@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Drehbare Sternkarte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Baloo+2:wght@600;800&display=swap">
+<style>
+  /* Layout: the paper planisphere fills the projector screen on the left; a calm control column sits on the right. */
+  :root {
+    --night: #0e1630;
+    --panel: #16214a;
+    --line: #2c3b70;
+    --ink: #f3f1e8;
+    --muted: #aab4da;
+    --lamp: #ffc24a;
+    --lamp-ink: #241a00;
+    --font-display: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+    --font-body: "Andika", "Segoe UI", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--night);
+    color: var(--ink);
+    font: 1rem/1.5 var(--font-body);
+  }
+  .app {
+    box-sizing: border-box;
+    height: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 24rem);
+    gap: 1.5rem;
+    padding-inline: max(16px, 2vw);
+    padding-block: 1rem;
+  }
+  .app.collapsed { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: .5rem; }
+  .stage-wrap { min-width: 0; min-height: 0; display: grid; place-items: center; }
+  .mini {
+    justify-self: end;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
+    padding: .4rem .5rem .4rem .9rem; border-radius: 1rem;
+    background: var(--panel); border: 1px solid var(--line);
+  }
+  .mini .time { font: 800 1.6rem/1 var(--font-display); font-variant-numeric: tabular-nums; color: var(--lamp); }
+  #stage {
+    width: 100%; height: 100%; max-width: 100%;
+    touch-action: none; cursor: grab; outline: none; border-radius: 1rem;
+  }
+  #stage.dragging { cursor: grabbing; }
+  #stage:focus-visible { box-shadow: 0 0 0 3px var(--lamp); }
+  #holder { transition: opacity .4s ease; }
+  #beam { fill: var(--lamp); fill-opacity: .38; stroke: var(--lamp); stroke-width: .5; }
+  .see-through #holder { opacity: .22; }
+
+  .panel {
+    min-width: 0; min-height: 0; overflow: auto;
+    display: flex; flex-direction: column; gap: 1.1rem;
+    padding: 1.25rem; border-radius: 1.25rem;
+    background: var(--panel); border: 1px solid var(--line);
+  }
+  .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+  .panel-head button { flex: none; }
+  h1 {
+    margin: 0; font: 800 2rem/1.05 var(--font-display); letter-spacing: .01em; text-wrap: balance;
+  }
+  .sub { margin: .2rem 0 0; color: var(--muted); font-size: .95rem; }
+  .readout { display: grid; gap: .1rem; }
+  .readout .date { font: 600 1.25rem/1.25 var(--font-display); }
+  .readout .time {
+    font: 800 3.4rem/1 var(--font-display); font-variant-numeric: tabular-nums; color: var(--lamp);
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .35rem; }
+  .chip {
+    font-size: .8rem; text-transform: uppercase; letter-spacing: .08em;
+    padding: .15rem .6rem; border-radius: 999px; border: 1px solid var(--line); color: var(--muted);
+  }
+  .chip.on { background: var(--lamp); color: var(--lamp-ink); border-color: var(--lamp); }
+  .hint { margin: 0; padding: .6rem .8rem; border-radius: .75rem; background: var(--night); color: var(--muted); }
+
+  .field { display: grid; gap: .35rem; }
+  .field label, .label {
+    font-size: .8rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted);
+  }
+  .row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  input[type="date"] {
+    font: inherit; font-size: 1.05rem; color: var(--ink); background: var(--night);
+    border: 1px solid var(--line); border-radius: .6rem; padding: .35rem .6rem;
+  }
+  input[type="range"] { width: 100%; accent-color: var(--lamp); height: 1.6rem; }
+  .scale { display: flex; justify-content: space-between; font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  button {
+    font: 700 1rem/1.2 var(--font-body); color: var(--ink); background: transparent;
+    border: 1.5px solid var(--line); border-radius: .75rem; padding: .55rem .9rem; cursor: pointer;
+  }
+  button:hover { border-color: var(--muted); }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--lamp); outline-offset: 2px; }
+  button.primary { background: var(--lamp); color: var(--lamp-ink); border-color: var(--lamp); }
+  button[aria-pressed="true"] { background: var(--ink); color: var(--night); border-color: var(--ink); }
+
+  .steps { margin: 0; padding: 0; list-style: none; display: grid; gap: .7rem; counter-reset: step; }
+  .steps li { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: .6rem; align-items: start; }
+  .steps li::before {
+    counter-increment: step; content: counter(step);
+    display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%;
+    font: 800 1.1rem/1 var(--font-display); background: var(--night); border: 1.5px solid var(--lamp); color: var(--lamp);
+  }
+  .note { margin: 0; font-size: .85rem; color: var(--muted); }
+
+  @media (max-width: 900px) {
+    html, body { height: auto; }
+    .app { height: auto; grid-template-columns: minmax(0, 1fr); }
+    #stage { height: auto; aspect-ratio: 172 / 170; }
+    .panel { overflow: visible; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="mini" id="mini" hidden>
+    <span class="time" id="miniTime">21:00 Uhr</span>
+    <button id="miniPlay">▶ Nacht abspielen</button>
+    <button id="expand" aria-controls="panel" aria-expanded="false">Steuerung</button>
+  </div>
+  <div class="stage-wrap">
+    <svg id="stage" viewBox="-86 -168 172 170" tabindex="0" role="img"
+         aria-label="Drehbare Sternkarte für 50 Grad Nord. Mit Maus, Finger oder Pfeiltasten drehen.">
+      <g id="wheel">
+        <image href="starwheel.png" x="-84" y="-166" width="168" height="168"></image>
+      </g>
+      <image id="holder" href="holder_front.png" x="-84" y="-155" width="168" height="155"></image>
+      <g id="pointer">
+        <path id="beam"></path>
+      </g>
+    </svg>
+  </div>
+
+  <aside class="panel" id="panel">
+    <header class="panel-head">
+      <div>
+        <h1>Drehbare Sternkarte</h1>
+        <p class="sub">für 50° Nord, also zum Beispiel Frankfurt, Würzburg oder Prag</p>
+      </div>
+      <button id="collapse" aria-controls="panel" aria-expanded="true">Einklappen</button>
+    </header>
+
+    <section class="readout" aria-live="polite">
+      <div class="date" id="outDate">Donnerstag, 9. Oktober</div>
+      <div class="time" id="outTime">21:00 Uhr</div>
+      <div class="chips">
+        <span class="chip" id="chipDst">Sommerzeit</span>
+        <span class="chip" id="chipNight">Nacht</span>
+      </div>
+    </section>
+    <p class="hint" id="dayHint" hidden>Jetzt ist es hell. Sterne sieht man erst, wenn es dunkel ist, also ungefähr zwischen 17 und 7 Uhr.</p>
+
+    <div class="field">
+      <label for="date">Datum</label>
+      <div class="row">
+        <input type="date" id="date">
+        <button id="tonight" class="primary">Heute Abend</button>
+        <button id="now">Jetzt</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="season">Durch das Jahr</label>
+      <input type="range" id="season" min="0" max="364" step="1">
+      <div class="scale"><span>Jan</span><span>Apr</span><span>Jul</span><span>Okt</span><span>Dez</span></div>
+    </div>
+
+    <div class="field">
+      <label for="time">Uhrzeit</label>
+      <input type="range" id="time" min="960" max="1980" step="5">
+      <div class="scale"><span>16 Uhr</span><span>20 Uhr</span><span>0 Uhr</span><span>4 Uhr</span><span>9 Uhr</span></div>
+    </div>
+
+    <div class="row">
+      <button id="play">▶ Nacht abspielen</button>
+      <button id="seeThrough" aria-pressed="false">Ganze Scheibe zeigen</button>
+      <button id="fullscreen">Vollbild</button>
+    </div>
+
+    <section class="field">
+      <span class="label">So benutzt du die Sternkarte</span>
+      <ol class="steps">
+        <li>Such am Rand der Scheibe das Datum von heute.</li>
+        <li>Dreh die Scheibe, bis das Datum genau neben der Uhrzeit steht. Der gelbe Streifen zeigt dir die Stelle.</li>
+        <li>Im Fenster siehst du jetzt alle Sterne, die gerade am Himmel stehen. Stell dich mit Blick nach Norden und halte die Karte über dich. Dann zeigt NORDEN nach Norden.</li>
+      </ol>
+    </section>
+
+    <p class="note">Du kannst die Scheibe auch mit der Maus oder dem Finger drehen. Mit den Pfeiltasten geht es in Viertelstunden (links, rechts) und Tagen (hoch, runter).</p>
+    <p class="note">Für Erwachsene: Die Skala zeigt die Ortszeit für 15° Ost. Westlich davon gehen die Sterne etwas später auf, in Köln zum Beispiel etwa 30 Minuten.</p>
+  </aside>
+</div>
+
+<script>
+(() => {
+  const PIVOT_Y = -82;          // centre of the star wheel, in mm, in the holder's coordinates
+  const SCALE_HOURS = 7.05;     // the printed clock scale runs from 17 to 7 o'clock
+  const MIN_TIME = 960, MAX_TIME = 1980;   // 16:00 on the chosen day to 09:00 the next morning
+  const VIEW_FULL = "-86 -168 172 170";     // the whole front of the holder, in mm
+  const VIEW_CROPPED = "-86 -168 172 125";  // down to just below the title, without the printed instructions
+
+  const $ = id => document.getElementById(id);
+  const stage = $("stage"), wheel = $("wheel"), pointer = $("pointer");
+
+  // State: the evening's calendar date and the clock time in minutes after its midnight (may exceed 24 h)
+  const today = new Date();
+  const state = { y: today.getFullYear(), m: today.getMonth(), d: today.getDate(), min: 21 * 60 };
+
+  // Angle of a date on the wheel (degrees, anticlockwise from the right), as drawn by starwheel.py
+  function thetaDeg(m, d) {
+    const days = (Date.UTC(2014, m, d) - Date.UTC(2014, 2, 20, 16, 55)) / 864e5;
+    return -days / 365.25 * 360;
+  }
+  function lastSunday(y, m) {
+    const t = new Date(Date.UTC(y, m + 1, 0));
+    t.setUTCDate(t.getUTCDate() - t.getUTCDay());
+    return t.getTime();
+  }
+  function isDst(y, m, d) {
+    const t = Date.UTC(y, m, d);
+    return t >= lastSunday(y, 2) && t < lastSunday(y, 9);
+  }
+  const dst = () => isDst(state.y, state.m, state.d);
+  const stdHours = () => state.min / 60 - (dst() ? 1 : 0);
+
+  // Rotation of the wheel (degrees, clockwise) that puts the date next to the clock time
+  const phi = () => -15 * stdHours() - 90 + thetaDeg(state.m, state.d);
+
+  // The yellow beam, drawn pointing straight up and rotated onto the hour mark
+  (function drawBeam() {
+    const half = 1.4 * Math.PI / 180, r0 = 57, r1 = 85.5;
+    const pt = (r, a) => `${(r * Math.sin(a)).toFixed(2)},${(PIVOT_Y - r * Math.cos(a)).toFixed(2)}`;
+    $("beam").setAttribute("d", `M${pt(r0, -half)} L${pt(r1, -half)} L${pt(r1, half)} L${pt(r0, half)} Z`);
+  })();
+
+  const fmtDate = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long" });
+  const fmtShort = new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "long" });
+  const pad = n => String(n).padStart(2, "0");
+
+  function render() {
+    wheel.setAttribute("transform", `rotate(${phi().toFixed(3)} 0 ${PIVOT_Y})`);
+
+    const std = stdHours();
+    const fromMidnight = ((std + 12) % 24 + 24) % 24 - 12;      // -12 … 12 hours around midnight
+    const onScale = Math.abs(fromMidnight) <= SCALE_HOURS;
+    pointer.setAttribute("transform", `rotate(${(-15 * std).toFixed(3)} 0 ${PIVOT_Y})`);
+    pointer.style.display = onScale ? "" : "none";
+    $("dayHint").hidden = onScale;
+
+    const evening = new Date(state.y, state.m, state.d);
+    const clock = ((Math.round(state.min) % 1440) + 1440) % 1440;
+    if (state.min >= 1440) {
+      const next = new Date(state.y, state.m, state.d + 1);
+      $("outDate").textContent = `Nacht vom ${fmtShort.format(evening)} auf den ${fmtShort.format(next)}`;
+    } else {
+      $("outDate").textContent = fmtDate.format(evening);
+    }
+    $("outTime").textContent = $("miniTime").textContent = `${pad(Math.floor(clock / 60))}:${pad(clock % 60)} Uhr`;
+    $("chipDst").textContent = dst() ? "Sommerzeit" : "Winterzeit";
+    $("chipDst").classList.toggle("on", dst());
+    $("chipNight").textContent = onScale ? "Nacht" : "Tag";
+
+    $("date").value = `${state.y}-${pad(state.m + 1)}-${pad(state.d)}`;
+    const doy = Math.round((Date.UTC(state.y, state.m, state.d) - Date.UTC(state.y, 0, 1)) / 864e5);
+    $("season").value = Math.min(364, doy);
+    $("time").value = Math.min(MAX_TIME, Math.max(MIN_TIME, Math.round(state.min / 5) * 5));
+  }
+
+  function setDate(dt) {
+    state.y = dt.getFullYear(); state.m = dt.getMonth(); state.d = dt.getDate();
+  }
+
+  // Controls
+  $("date").addEventListener("change", e => {
+    if (!e.target.value) return;
+    const [y, m, d] = e.target.value.split("-").map(Number);
+    setDate(new Date(y, m - 1, d)); render();
+  });
+  $("season").addEventListener("input", e => {
+    setDate(new Date(state.y, 0, 1 + Number(e.target.value))); render();
+  });
+  $("time").addEventListener("input", e => { stopPlay(); state.min = Number(e.target.value); render(); });
+  $("tonight").addEventListener("click", () => { stopPlay(); setDate(new Date()); state.min = 21 * 60; render(); });
+  $("now").addEventListener("click", () => {
+    stopPlay();
+    const n = new Date();
+    let min = n.getHours() * 60 + n.getMinutes();
+    if (min < 12 * 60) {           // after midnight: it still belongs to yesterday evening's night
+      setDate(new Date(n.getFullYear(), n.getMonth(), n.getDate() - 1));
+      min += 1440;
+    } else {
+      setDate(n);
+    }
+    state.min = min; render();
+  });
+  $("seeThrough").addEventListener("click", e => {
+    const on = e.currentTarget.getAttribute("aria-pressed") !== "true";
+    e.currentTarget.setAttribute("aria-pressed", String(on));
+    stage.classList.toggle("see-through", on);
+  });
+  const fsButton = $("fullscreen");
+  if (!document.documentElement.requestFullscreen) fsButton.hidden = true;
+  fsButton.addEventListener("click", () => {
+    const req = document.fullscreenElement ? document.exitFullscreen() : $("app").requestFullscreen();
+    if (req && req.catch) req.catch(() => { fsButton.hidden = true; });
+  });
+
+  // "Play the night": half an hour of sky per second
+  let playing = null, last = 0;
+  function stopPlay() {
+    if (playing) cancelAnimationFrame(playing);
+    playing = null; setPlayLabel("▶ Nacht abspielen");
+  }
+  function step(ts) {
+    if (last) state.min += (ts - last) * 0.03;
+    last = ts;
+    if (state.min >= 7 * 60 + 1440) { state.min = 7 * 60 + 1440; render(); stopPlay(); return; }
+    render();
+    playing = requestAnimationFrame(step);
+  }
+  function setPlayLabel(text) { $("play").textContent = $("miniPlay").textContent = text; }
+  function togglePlay() {
+    if (playing) { stopPlay(); return; }
+    if (state.min < 18 * 60 || state.min >= 7 * 60 + 1440) state.min = 18 * 60;
+    last = 0; setPlayLabel("❚❚ Anhalten");
+    playing = requestAnimationFrame(step);
+  }
+  $("play").addEventListener("click", togglePlay);
+  $("miniPlay").addEventListener("click", togglePlay);
+
+  // Collapse the control panel so that the planisphere gets the whole screen
+  function setCollapsed(collapsed) {
+    $("app").classList.toggle("collapsed", collapsed);
+    $("panel").hidden = collapsed;
+    $("mini").hidden = !collapsed;
+    stage.setAttribute("viewBox", collapsed ? VIEW_CROPPED : VIEW_FULL);
+    $("collapse").setAttribute("aria-expanded", String(!collapsed));
+    $("expand").setAttribute("aria-expanded", String(!collapsed));
+    try { localStorage.setItem("panelCollapsed", collapsed ? "1" : "0"); } catch (e) { /* storage unavailable */ }
+  }
+  $("collapse").addEventListener("click", () => { setCollapsed(true); $("expand").focus(); });
+  $("expand").addEventListener("click", () => { setCollapsed(false); $("collapse").focus(); });
+  let startCollapsed = false;
+  try { startCollapsed = localStorage.getItem("panelCollapsed") === "1"; } catch (e) { /* storage unavailable */ }
+  setCollapsed(startCollapsed);
+
+  // Turning the wheel by hand changes the time, just like on the paper model
+  function angleAt(ev) {
+    const p = stage.createSVGPoint();
+    p.x = ev.clientX; p.y = ev.clientY;
+    const q = p.matrixTransform(stage.getScreenCTM().inverse());
+    return Math.atan2(q.x, -(q.y - PIVOT_Y)) * 180 / Math.PI;   // clockwise from straight up
+  }
+  let dragFrom = null;
+  stage.addEventListener("pointerdown", ev => {
+    stopPlay();
+    dragFrom = angleAt(ev);
+    stage.setPointerCapture(ev.pointerId);
+    stage.classList.add("dragging");
+  });
+  stage.addEventListener("pointermove", ev => {
+    if (dragFrom === null) return;
+    const a = angleAt(ev);
+    let delta = a - dragFrom;
+    if (delta > 180) delta -= 360;
+    if (delta < -180) delta += 360;
+    dragFrom = a;
+    // Turning clockwise by delta degrees goes back in time by delta / 15 hours
+    let min = state.min - delta / 15 * 60;
+    while (min < 720) min += 1440;          // keep the time between noon and the next noon
+    while (min >= 2160) min -= 1440;
+    state.min = min; render();
+  });
+  const endDrag = ev => {
+    if (dragFrom === null) return;
+    dragFrom = null; stage.classList.remove("dragging");
+    if (stage.hasPointerCapture(ev.pointerId)) stage.releasePointerCapture(ev.pointerId);
+  };
+  stage.addEventListener("pointerup", endDrag);
+  stage.addEventListener("pointercancel", endDrag);
+
+  stage.addEventListener("keydown", ev => {
+    const keys = { ArrowLeft: [-15, 0], ArrowRight: [15, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] };
+    if (!keys[ev.key]) return;
+    ev.preventDefault(); stopPlay();
+    const [dm, dd] = keys[ev.key];
+    state.min = Math.min(2160 - 1, Math.max(720, state.min + dm));
+    if (dd) setDate(new Date(state.y, state.m, state.d + dd));
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
