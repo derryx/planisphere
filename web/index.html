@@ -39,7 +39,17 @@
     padding-block: 1rem;
   }
   .app.collapsed { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: .5rem; }
-  .stage-wrap { min-width: 0; min-height: 0; display: grid; place-items: center; }
+  .stage-wrap { position: relative; min-width: 0; min-height: 0; display: grid; place-items: center; }
+  .zoombar {
+    position: absolute; top: 0; left: 0;
+    display: flex; flex-direction: column; gap: .4rem;
+  }
+  .zoombar button {
+    min-width: 3rem; padding: .45rem .5rem; background: var(--panel);
+    font-variant-numeric: tabular-nums;
+  }
+  .zoombar button:disabled { opacity: .4; cursor: default; }
+  #stage.pan-mode { cursor: move; }
   .mini {
     justify-self: end;
     display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
@@ -138,6 +148,12 @@
         <path id="beam"></path>
       </g>
     </svg>
+    <div class="zoombar" role="group" aria-label="Zoom">
+      <button id="zoomIn" title="Vergrößern (Taste +)" aria-label="Vergrößern">+</button>
+      <button id="zoomOut" title="Verkleinern (Taste −)" aria-label="Verkleinern">−</button>
+      <button id="zoomReset" title="Zurück auf 100 % (Taste 0)">100 %</button>
+      <button id="panMode" aria-pressed="false" title="Ausschnitt mit der Maus verschieben">✋</button>
+    </div>
   </div>
 
   <aside class="panel" id="panel">
@@ -196,6 +212,7 @@
     </section>
 
     <p class="note">Du kannst die Scheibe auch mit der Maus oder dem Finger drehen. Mit den Pfeiltasten geht es in Viertelstunden (links, rechts) und Tagen (hoch, runter).</p>
+    <p class="note">Zoomen: Mausrad, die Knöpfe oben links oder zwei Finger. Zum Verschieben des Ausschnitts die Hand ✋ einschalten oder mit der mittleren Maustaste ziehen.</p>
     <p class="note">Für Erwachsene: Die Skala zeigt die Ortszeit für 15° Ost. Westlich davon gehen die Sterne etwas später auf, in Köln zum Beispiel etwa 30 Minuten.</p>
   </aside>
 </div>
@@ -337,12 +354,69 @@
   $("play").addEventListener("click", togglePlay);
   $("miniPlay").addEventListener("click", togglePlay);
 
+  // Zoom: the view is a zoom factor and a centre point, in mm, within the base view
+  const MAX_ZOOM = 6;
+  const parseBox = s => { const [x, y, w, h] = s.split(" ").map(Number); return { x, y, w, h }; };
+  let base = parseBox(VIEW_FULL);
+  const view = { z: 1, cx: 0, cy: 0 };
+
+  function applyView() {
+    const w = base.w / view.z, h = base.h / view.z;
+    view.cx = Math.min(base.x + base.w - w / 2, Math.max(base.x + w / 2, view.cx));
+    view.cy = Math.min(base.y + base.h - h / 2, Math.max(base.y + h / 2, view.cy));
+    stage.setAttribute("viewBox", `${(view.cx - w / 2).toFixed(3)} ${(view.cy - h / 2).toFixed(3)} ${w.toFixed(3)} ${h.toFixed(3)}`);
+    $("zoomReset").textContent = `${Math.round(view.z * 100)} %`;
+    $("zoomIn").disabled = view.z >= MAX_ZOOM;
+    $("zoomOut").disabled = view.z <= 1;
+  }
+  function resetView() {
+    view.z = 1; view.cx = base.x + base.w / 2; view.cy = base.y + base.h / 2;
+    applyView();
+  }
+  function toModel(clientX, clientY) {
+    const p = stage.createSVGPoint();
+    p.x = clientX; p.y = clientY;
+    return p.matrixTransform(stage.getScreenCTM().inverse());
+  }
+  // Zoom by a factor, keeping the given point (in mm) where it is on screen
+  function zoomAt(factor, px, py) {
+    const z = Math.min(MAX_ZOOM, Math.max(1, view.z * factor));
+    const keep = view.z / z;
+    view.cx = px + (view.cx - px) * keep;
+    view.cy = py + (view.cy - py) * keep;
+    view.z = z;
+    applyView();
+  }
+  function zoomAtCentre(factor) { zoomAt(factor, view.cx, view.cy); }
+  // Move the view by a distance on screen, in pixels
+  function panBy(dxPx, dyPx) {
+    const pxPerMm = stage.getScreenCTM().a;
+    view.cx -= dxPx / pxPerMm;
+    view.cy -= dyPx / pxPerMm;
+    applyView();
+  }
+
+  $("zoomIn").addEventListener("click", () => zoomAtCentre(1.4));
+  $("zoomOut").addEventListener("click", () => zoomAtCentre(1 / 1.4));
+  $("zoomReset").addEventListener("click", resetView);
+  $("panMode").addEventListener("click", e => {
+    const on = e.currentTarget.getAttribute("aria-pressed") !== "true";
+    e.currentTarget.setAttribute("aria-pressed", String(on));
+    stage.classList.toggle("pan-mode", on);
+  });
+  stage.addEventListener("wheel", ev => {
+    ev.preventDefault();
+    const p = toModel(ev.clientX, ev.clientY);
+    zoomAt(Math.exp(-ev.deltaY * 0.0015), p.x, p.y);
+  }, { passive: false });
+
   // Collapse the control panel so that the planisphere gets the whole screen
   function setCollapsed(collapsed) {
     $("app").classList.toggle("collapsed", collapsed);
     $("panel").hidden = collapsed;
     $("mini").hidden = !collapsed;
-    stage.setAttribute("viewBox", collapsed ? VIEW_CROPPED : VIEW_FULL);
+    base = parseBox(collapsed ? VIEW_CROPPED : VIEW_FULL);
+    resetView();
     $("collapse").setAttribute("aria-expanded", String(!collapsed));
     $("expand").setAttribute("aria-expanded", String(!collapsed));
     try { localStorage.setItem("panelCollapsed", collapsed ? "1" : "0"); } catch (e) { /* storage unavailable */ }
@@ -353,42 +427,79 @@
   try { startCollapsed = localStorage.getItem("panelCollapsed") === "1"; } catch (e) { /* storage unavailable */ }
   setCollapsed(startCollapsed);
 
-  // Turning the wheel by hand changes the time, just like on the paper model
-  function angleAt(ev) {
-    const p = stage.createSVGPoint();
-    p.x = ev.clientX; p.y = ev.clientY;
-    const q = p.matrixTransform(stage.getScreenCTM().inverse());
+  // Pointer input. One pointer turns the wheel (or moves the view in pan mode or with the middle mouse
+  // button); two fingers zoom and move the view.
+  function angleAt(clientX, clientY) {
+    const q = toModel(clientX, clientY);
     return Math.atan2(q.x, -(q.y - PIVOT_Y)) * 180 / Math.PI;   // clockwise from straight up
   }
-  let dragFrom = null;
-  stage.addEventListener("pointerdown", ev => {
-    stopPlay();
-    dragFrom = angleAt(ev);
-    stage.setPointerCapture(ev.pointerId);
-    stage.classList.add("dragging");
-  });
-  stage.addEventListener("pointermove", ev => {
-    if (dragFrom === null) return;
-    const a = angleAt(ev);
-    let delta = a - dragFrom;
-    if (delta > 180) delta -= 360;
-    if (delta < -180) delta += 360;
-    dragFrom = a;
+  function turnWheel(delta) {
     // Turning clockwise by delta degrees goes back in time by delta / 15 hours
     let min = state.min - delta / 15 * 60;
     while (min < 720) min += 1440;          // keep the time between noon and the next noon
     while (min >= 2160) min -= 1440;
     state.min = min; render();
+  }
+
+  const pointers = new Map();   // pointerId -> last client position
+  let gesture = null;           // "turn", "pan" or "pinch"
+  let lastAngle = 0, lastPinch = null;
+
+  function pinchState() {
+    const [a, b] = [...pointers.values()];
+    return { dist: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+  }
+  stage.addEventListener("pointerdown", ev => {
+    stopPlay();
+    pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    try { stage.setPointerCapture(ev.pointerId); } catch (e) { /* the pointer is already gone */ }
+    if (pointers.size === 2) {
+      gesture = "pinch"; lastPinch = pinchState();
+    } else if (pointers.size === 1) {
+      const pan = ev.button === 1 || stage.classList.contains("pan-mode");
+      gesture = pan ? "pan" : "turn";
+      if (ev.button === 1) ev.preventDefault();
+      lastAngle = angleAt(ev.clientX, ev.clientY);
+    }
+    stage.classList.add("dragging");
   });
-  const endDrag = ev => {
-    if (dragFrom === null) return;
-    dragFrom = null; stage.classList.remove("dragging");
+  stage.addEventListener("pointermove", ev => {
+    if (!pointers.has(ev.pointerId)) return;
+    const prev = pointers.get(ev.pointerId);
+    pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    if (gesture === "pinch" && pointers.size === 2) {
+      const now = pinchState();
+      const p = toModel(lastPinch.mx, lastPinch.my);
+      zoomAt(now.dist / lastPinch.dist, p.x, p.y);
+      panBy(now.mx - lastPinch.mx, now.my - lastPinch.my);
+      lastPinch = now;
+    } else if (gesture === "pan") {
+      panBy(ev.clientX - prev.x, ev.clientY - prev.y);
+    } else if (gesture === "turn") {
+      const a = angleAt(ev.clientX, ev.clientY);
+      let delta = a - lastAngle;
+      if (delta > 180) delta -= 360;
+      if (delta < -180) delta += 360;
+      lastAngle = a;
+      turnWheel(delta);
+    }
+  });
+  const endPointer = ev => {
+    if (!pointers.has(ev.pointerId)) return;
+    pointers.delete(ev.pointerId);
     if (stage.hasPointerCapture(ev.pointerId)) stage.releasePointerCapture(ev.pointerId);
+    // After a pinch, wait until all fingers are lifted before turning again
+    if (pointers.size === 0) { gesture = null; stage.classList.remove("dragging"); }
+    else if (gesture === "pinch") gesture = "done";
   };
-  stage.addEventListener("pointerup", endDrag);
-  stage.addEventListener("pointercancel", endDrag);
+  stage.addEventListener("pointerup", endPointer);
+  stage.addEventListener("pointercancel", endPointer);
+  stage.addEventListener("auxclick", ev => { if (ev.button === 1) ev.preventDefault(); });
 
   stage.addEventListener("keydown", ev => {
+    if (ev.key === "+" || ev.key === "=") { ev.preventDefault(); zoomAtCentre(1.4); return; }
+    if (ev.key === "-") { ev.preventDefault(); zoomAtCentre(1 / 1.4); return; }
+    if (ev.key === "0") { ev.preventDefault(); resetView(); return; }
     const keys = { ArrowLeft: [-15, 0], ArrowRight: [15, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] };
     if (!keys[ev.key]) return;
     ev.preventDefault(); stopPlay();
